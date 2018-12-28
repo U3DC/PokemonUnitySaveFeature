@@ -18,6 +18,11 @@ A start for the creation of a flexible save mechanic inside PokemonUnity.
   CustomSaveEvent which is a System.Serializable class that saves an event (like picking up an Item).
 </p>
 
+<br></br>
+<p align="center">
+  The Develop branch is for the public repository of PokemonUnity and the Beta branch is for herbertmillhome's PokemonUnity Fork
+</p>
+
 ## Credits
 
 * PKUE Project Lead: [Kisu-Amare](https://www.furaffinity.net/user/teampopplio/)
