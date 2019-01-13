@@ -8,8 +8,11 @@ using UnityEngine;
 using System.IO;
 using System.Linq;
 using UnityEngine.SceneManagement;
+using System;
 
 public static class GlobalSaveManager {
+    private const string BuildVersion = "0.0.1";
+    private static string saveLocation = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData) + @"\Pokemon Unity\Saves\";
 
     private static GameObject Player;
     private static List<CustomSaveEvent> EventSaves = new List<CustomSaveEvent>();
@@ -54,7 +57,7 @@ public static class GlobalSaveManager {
 
         string AppData = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData);
         BinaryFormatter bf = new BinaryFormatter();
-        FileStream file = File.Open(AppData + @"\Pokemon Unity\Saves\Save" + (Directory.GetFiles(AppData).Length - 1).ToString() + ".pku", FileMode.OpenOrCreate, FileAccess.Write);
+        FileStream file = File.Open(saveLocation + @"Save" + (Directory.GetFiles(saveLocation).Length - 1).ToString() + ".pku", FileMode.OpenOrCreate, FileAccess.Write);
 
         bf.Serialize(file, DataToSave);
         file.Close();
@@ -63,7 +66,7 @@ public static class GlobalSaveManager {
     public static void Load()
     {
         BinaryFormatter bf = new BinaryFormatter();
-        FileStream file = File.Open(@"C:\Users\David Blerkselmans\Desktop\PKU TestSaves\Save1.pku", FileMode.Open, FileAccess.Read);
+        FileStream file = File.Open(saveLocation + "@Save" + (Directory.GetFiles(saveLocation).Length - 1).ToString() + ".pku", FileMode.Open, FileAccess.Read);
 
         CustomSaveData DataToLoad = (CustomSaveData)bf.Deserialize(file);
 
@@ -82,9 +85,60 @@ public static class GlobalSaveManager {
         EventSaves = EventSaves.OrderBy(x => x.EventTime).ToList();
     }
 
+    static List<CustomSaveData> GetSaves(int Amount)
+    {
+        List<CustomSaveData> saveFiles = new List<CustomSaveData>();
+        foreach (string file in Directory.GetFiles(saveLocation))
+        {
+            BinaryFormatter bf = new BinaryFormatter();
+            try
+            {
+                if (Path.GetExtension(file) == "pku")
+                {
+                    using (FileStream fileStream = new FileStream(file, FileMode.Open, FileAccess.Read))
+                    {
+                        try
+                        {
+                            CustomSaveData saveData = (CustomSaveData)bf.Deserialize(fileStream);
+                            if (saveData.BuildVersion == BuildVersion)
+                            {
+                                saveFiles.Add(saveData);
+                            }
+                            else
+                            {
+                                //Try to convert the created file into the current version
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.Log(e.ToString());
+                        }
+                    }
+                }
+            }
+            catch (IOException e)
+            {
+                throw e;
+            }
+        }
+
+        saveFiles = saveFiles.OrderBy(x => x.TimeCreated).ToList();
+        if (Amount == 0 || saveFiles.Count < Amount)
+        {
+            return saveFiles;
+        }
+        else
+        {
+            return saveFiles.Take(Amount).ToList();
+        }
+    }
+
     [System.Serializable]
     private class CustomSaveData
     {
+        public string BuildVersion = GlobalSaveManager.BuildVersion;
+        public DateTime TimeCreated;
+
         public SerializableVector3 PlayerPosition;
         public SerializableQuaternion PlayerRotation;
 
