@@ -1,5 +1,5 @@
 ﻿//Thanks to Omnicron for the reference to
-//https://pastebin.com/YY0XKMCQ
+// https://pastebin.com/YY0XKMCQ
 //For BinarryFormatting any System.Serializable into a custom file
 
 using System.Runtime.Serialization.Formatters.Binary;
@@ -90,10 +90,24 @@ public static class GlobalSaveManager {
 
         public int ActiveScene;
 
+        /// <summary>
+        /// When the Player blacks out they need to return to the last visited Pokemon Center
+        /// </summary>
+        private int pCenterScene;
+        private SerializableVector3 pCenterPosition;
+        private SerializableQuaternion pCenterRotation;
+
         public Pokemon[][] Party;
         public Bag PlayerBag;
 
         public List<CustomSaveEvent> SaveData;
+
+        public void AddPokemonCenter(int scene, SerializableVector3 position, SerializableQuaternion rotation)
+        {
+            pCenterScene = scene;
+            pCenterPosition = position;
+            pCenterRotation = rotation;
+        }
 
         public CustomSaveData(
             SerializableVector3 playerPosition,
