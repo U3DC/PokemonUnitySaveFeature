@@ -219,16 +219,23 @@ public static class GlobalSaveManager {
         private SerializableVector3 pCenterPosition;
         private int pCenterDirection;
 
+        private SerializableVector3 pCenterFposition;
+        private int pCenterFdirection;
+
         public Pokemon[][] Party;
         public Bag PlayerBag;
 
         public List<CustomSaveEvent> SaveData;
 
-        public void AddPokemonCenter(int scene, SerializableVector3 position, int direction)
+        public void AddPokemonCenter(int scene, SerializableVector3 position, int direction, SerializableVector3 fPosition, int fDirection)
         {
             pCenterScene = scene;
+
             pCenterPosition = position;
             pCenterDirection = direction;
+
+            pCenterFposition = fPosition;
+            pCenterFdirection = fDirection;
         }
 
         public CustomSaveData(
