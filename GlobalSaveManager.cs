@@ -48,12 +48,17 @@ public static class GlobalSaveManager {
 
     public static void Save()
     {
-        GlobalVariables globalVariables = (GlobalVariables)GameObject.Find("Global").GetComponent("GlobalVariables");
+        //GlobalVariables globalVariables = (GlobalVariables)GameObject.Find("Global").GetComponent("GlobalVariables");
 
         Pokemon[][] Party = SaveData.currentSave.PC.boxes;
         Bag PlayerBag = SaveData.currentSave.Bag;
 
-        CustomSaveData DataToSave = new CustomSaveData(Player.transform.position, Player.transform.rotation, SceneManager.GetActiveScene().buildIndex, Party, PlayerBag, EventSaves, "");
+        CustomSaveData DataToSave = new CustomSaveData(
+            Player.transform.position, Player.GetComponent<PlayerMovement>().direction,
+            Player.transform.Find("Follower").transform.position, Player.GetComponentInChildren<FollowerMovement>().direction,
+            SceneManager.GetActiveScene().buildIndex,
+            Party, PlayerBag, EventSaves, "");
+
         BinaryFormatter bf = new BinaryFormatter();
         try
         {
@@ -72,9 +77,11 @@ public static class GlobalSaveManager {
             Debug.Log("Pokemon Unity save directory does not exist, creating new one...");
             Directory.CreateDirectory(saveLocation.Substring(0, saveLocation.Length -1));
             Debug.Log("Trying to save again...");
-            FileStream file = File.Open(saveLocation + @"Save" + (Directory.GetFiles(saveLocation).Length - 2).ToString() + ".pku", FileMode.OpenOrCreate, FileAccess.Write);
+
+            FileStream file = File.Open(saveLocation + @"Save" + (Directory.GetFiles(saveLocation, "*pku", SearchOption.TopDirectoryOnly).Length).ToString() + ".pku", FileMode.OpenOrCreate, FileAccess.Write);
             bf.Serialize(file, DataToSave);
             file.Close();
+
             Debug.Log("Save file created.");
         }
     }
@@ -89,6 +96,7 @@ public static class GlobalSaveManager {
 
             if (null != DataToLoad)
             {
+
                 //EventSaves contains all the Events that the Player has encountered
                 EventSaves = DataToLoad.SaveData;
 
@@ -97,23 +105,35 @@ public static class GlobalSaveManager {
                     SaveData.currentSave = new SaveData(-1);
                 }
 
-                //Loads the Trainer's Party into the CurrentSave
-                SaveData.currentSave.PC.boxes = DataToLoad.Party;
-                //Loads the Bag (containing the Items that the player owns) into the CurrentSave
-                SaveData.currentSave.Bag = DataToLoad.PlayerBag;
+                if (SceneManager.GetActiveScene().buildIndex != DataToLoad.ActiveScene)
+                {
+                    SceneManager.LoadScene(DataToLoad.ActiveScene);
+                }
+                else
+                {
+                    //Loads the Trainer's Party into the CurrentSave
+                    SaveData.currentSave.PC.boxes = DataToLoad.Party;
+                    //Loads the Bag (containing the Items that the player owns) into the CurrentSave
+                    SaveData.currentSave.Bag = DataToLoad.PlayerBag;
 
-                GameObject Player = GameObject.FindGameObjectWithTag("Player");
-                Player.transform.position = DataToLoad.PlayerPosition;
-                Player.transform.rotation = DataToLoad.PlayerRotation;
+                    //Loading Player
+                    GameObject Player = GameObject.FindGameObjectWithTag("Player");
+                    Player.transform.position = DataToLoad.PlayerPosition;
+                    Player.GetComponent<PlayerMovement>().direction = DataToLoad.PlayerDirection;
+                    //Loading Follower
+                    GameObject Follower = Player.transform.Find("Follower").gameObject;
+                    Follower.transform.position = DataToLoad.FollowerPosition;
+                    Follower.GetComponent<FollowerMovement>().direction = DataToLoad.FollowerDirection;
 
-                EventSaves = EventSaves.OrderBy(x => x.EventTime).ToList();
+                    EventSaves = EventSaves.OrderBy(x => x.EventTime).ToList();
+                }
             }
 
             file.Dispose();
         }
-        catch(Exception e)
+        catch(FileNotFoundException e)
         {
-            Debug.Log(e.ToString());
+            Debug.Log("Couldn't find \"Save" + saveIndex + ".pku\".");
         }
     }
 
@@ -170,10 +190,15 @@ public static class GlobalSaveManager {
     {
         public string BuildVersion = GlobalSaveManager.BuildVersion;
         public string SaveName = string.Empty;
+
         public DateTime TimeCreated;
 
+        //Player
         public SerializableVector3 PlayerPosition;
-        public SerializableQuaternion PlayerRotation;
+        public int PlayerDirection;
+        //Follower
+        public SerializableVector3 FollowerPosition;
+        public int FollowerDirection;
 
         public int ActiveScene;
 
@@ -182,28 +207,32 @@ public static class GlobalSaveManager {
         /// </summary>
         private int pCenterScene;
         private SerializableVector3 pCenterPosition;
-        private SerializableQuaternion pCenterRotation;
+        private int pCenterDirection;
 
         public Pokemon[][] Party;
         public Bag PlayerBag;
 
         public List<CustomSaveEvent> SaveData;
 
-        public void AddPokemonCenter(int scene, SerializableVector3 position, SerializableQuaternion rotation)
+        public void AddPokemonCenter(int scene, SerializableVector3 position, int direction)
         {
             pCenterScene = scene;
             pCenterPosition = position;
-            pCenterRotation = rotation;
+            pCenterDirection = direction;
         }
 
         public CustomSaveData(
-            SerializableVector3 playerPosition,
-            SerializableQuaternion playerRotation, int activeScene,
+            SerializableVector3 playerPosition, int playerRotation, 
+            SerializableVector3 followerPosition, int followerDirection,
+            int activeScene,
             Pokemon[][] party, Bag playerBag, List<CustomSaveEvent> saveData,
             string saveName)
         {
             PlayerPosition = playerPosition;
-            PlayerRotation = playerRotation;
+            PlayerDirection = playerRotation;
+
+            FollowerPosition = followerPosition;
+            FollowerDirection = followerDirection;
 
             ActiveScene = activeScene;
 
