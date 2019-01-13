@@ -53,36 +53,68 @@ public static class GlobalSaveManager {
         Pokemon[][] Party = SaveData.currentSave.PC.boxes;
         Bag PlayerBag = SaveData.currentSave.Bag;
 
-        CustomSaveData DataToSave = new CustomSaveData(Player.transform.position, Player.transform.rotation, SceneManager.GetActiveScene().buildIndex, Party, PlayerBag, EventSaves);
-
-        string AppData = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData);
+        CustomSaveData DataToSave = new CustomSaveData(Player.transform.position, Player.transform.rotation, SceneManager.GetActiveScene().buildIndex, Party, PlayerBag, EventSaves, "");
         BinaryFormatter bf = new BinaryFormatter();
-        FileStream file = File.Open(saveLocation + @"Save" + (Directory.GetFiles(saveLocation).Length - 1).ToString() + ".pku", FileMode.OpenOrCreate, FileAccess.Write);
+        try
+        {
+            int saveAmount = Directory.GetFiles(saveLocation, "*pku", SearchOption.TopDirectoryOnly).Length;
 
-        bf.Serialize(file, DataToSave);
-        file.Close();
+            if (saveAmount < 0)
+                saveAmount = 0;
+
+            FileStream file = File.Open(saveLocation + @"Save" + saveAmount.ToString() + ".pku", FileMode.OpenOrCreate, FileAccess.Write);
+            bf.Serialize(file, DataToSave);
+            file.Close();
+            Debug.Log("Save file created.");
+        }
+        catch(Exception)
+        {
+            Debug.Log("Pokemon Unity save directory does not exist, creating new one...");
+            Directory.CreateDirectory(saveLocation.Substring(0, saveLocation.Length -1));
+            Debug.Log("Trying to save again...");
+            FileStream file = File.Open(saveLocation + @"Save" + (Directory.GetFiles(saveLocation).Length - 2).ToString() + ".pku", FileMode.OpenOrCreate, FileAccess.Write);
+            bf.Serialize(file, DataToSave);
+            file.Close();
+            Debug.Log("Save file created.");
+        }
     }
 
-    public static void Load()
+    public static void Load(int saveIndex)
     {
         BinaryFormatter bf = new BinaryFormatter();
-        FileStream file = File.Open(saveLocation + "@Save" + (Directory.GetFiles(saveLocation).Length - 1).ToString() + ".pku", FileMode.Open, FileAccess.Read);
+        try
+        {
+            FileStream file = File.Open(saveLocation + "Save" + saveIndex.ToString() + ".pku", FileMode.Open, FileAccess.Read);
+            CustomSaveData DataToLoad = (CustomSaveData)bf.Deserialize(file);
 
-        CustomSaveData DataToLoad = (CustomSaveData)bf.Deserialize(file);
+            if (null != DataToLoad)
+            {
+                //EventSaves contains all the Events that the Player has encountered
+                EventSaves = DataToLoad.SaveData;
 
-        //EventSaves contains all the Events that the Player has encountered
-        EventSaves = DataToLoad.SaveData;
+                if (SaveData.currentSave == null)
+                {
+                    SaveData.currentSave = new SaveData(-1);
+                }
 
-        //Loads the Trainer's Party into the CurrentSave
-        SaveData.currentSave.PC.boxes = DataToLoad.Party;
-        //Loads the Bag (containing the Items that the player owns) into the CurrentSave
-        SaveData.currentSave.Bag = DataToLoad.PlayerBag;
+                //Loads the Trainer's Party into the CurrentSave
+                SaveData.currentSave.PC.boxes = DataToLoad.Party;
+                //Loads the Bag (containing the Items that the player owns) into the CurrentSave
+                SaveData.currentSave.Bag = DataToLoad.PlayerBag;
 
-        GameObject Player = GameObject.FindGameObjectWithTag("Player");
-        Player.transform.position = DataToLoad.PlayerPosition;
-        Player.transform.rotation = DataToLoad.PlayerRotation;
+                GameObject Player = GameObject.FindGameObjectWithTag("Player");
+                Player.transform.position = DataToLoad.PlayerPosition;
+                Player.transform.rotation = DataToLoad.PlayerRotation;
 
-        EventSaves = EventSaves.OrderBy(x => x.EventTime).ToList();
+                EventSaves = EventSaves.OrderBy(x => x.EventTime).ToList();
+            }
+
+            file.Dispose();
+        }
+        catch(Exception e)
+        {
+            Debug.Log(e.ToString());
+        }
     }
 
     static List<CustomSaveData> GetSaves(int Amount)
@@ -137,6 +169,7 @@ public static class GlobalSaveManager {
     private class CustomSaveData
     {
         public string BuildVersion = GlobalSaveManager.BuildVersion;
+        public string SaveName = string.Empty;
         public DateTime TimeCreated;
 
         public SerializableVector3 PlayerPosition;
@@ -166,7 +199,8 @@ public static class GlobalSaveManager {
         public CustomSaveData(
             SerializableVector3 playerPosition,
             SerializableQuaternion playerRotation, int activeScene,
-            Pokemon[][] party, Bag playerBag, List<CustomSaveEvent> saveData)
+            Pokemon[][] party, Bag playerBag, List<CustomSaveEvent> saveData,
+            string saveName)
         {
             PlayerPosition = playerPosition;
             PlayerRotation = playerRotation;
@@ -177,6 +211,9 @@ public static class GlobalSaveManager {
             PlayerBag = playerBag;
 
             SaveData = saveData;
+            SaveName = saveName;
+
+            TimeCreated = DateTime.Now;
         }
     }
 }

@@ -6,16 +6,20 @@ using UnityEngine.SceneManagement;
 
 public class EventListener : MonoBehaviour
 {
-    public PlayerMovement Player;
+    public GameObject Player;
+    private PlayerMovement playerMovement;
     private bool RegisteredEvent = false;
 
     private void Awake()
     {
-        GlobalSaveManager.Load();
+        GlobalSaveManager.Load(0);
 
-        if(null == Player)
-            Player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerMovement>();
-        GlobalSaveManager.RegisterPlayer(GameObject.FindGameObjectWithTag("Player"));
+        if (null == Player)
+        {
+            Player = GameObject.FindGameObjectWithTag("Player");
+            playerMovement = Player.GetComponent<PlayerMovement>();
+        }
+        GlobalSaveManager.RegisterPlayer(Player);
 
         List<CustomSaveEvent> Events = GlobalSaveManager.GetRelaventSaveData(SceneManager.GetActiveScene().buildIndex);
 
@@ -44,10 +48,10 @@ public class EventListener : MonoBehaviour
 
     private void Update()
     {
-        if (Player.busyWith != null && RegisteredEvent == false)
+        if (playerMovement.busyWith != null && RegisteredEvent == false)
         {
             //Getting the Object the Player's busy with
-            GameObject eventObject = Player.busyWith;
+            GameObject eventObject = playerMovement.busyWith;
 
             //Getting the events from the object
             CustomEvent interactionEvent = eventObject.GetComponent<CustomEvent>();
@@ -65,7 +69,7 @@ public class EventListener : MonoBehaviour
                 GlobalSaveManager.Save();
             }
         }
-        else if(Player.busyWith == null)
+        else if(playerMovement.busyWith == null)
         {
             RegisteredEvent = false;
         }
