@@ -4,15 +4,15 @@
 
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Collections.Generic;
-using UnityEngine;
 using System.IO;
 using System.Linq;
-using UnityEngine.SceneManagement;
 using System;
+using UnityEngine.SceneManagement;
+using UnityEngine;
 
 public static class GlobalSaveManager {
     private const string BuildVersion = "0.0.1";
-    private static string saveLocation = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData) + @"\Pokemon Unity\Saves\";
+    private static string saveLocation = Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData) + @"\Pokemon Unity\Saves\";
 
     private static GameObject Player;
     private static List<CustomSaveEvent> EventSaves = new List<CustomSaveEvent>();
@@ -46,10 +46,11 @@ public static class GlobalSaveManager {
         return EventSaves.Where(x => x.SceneIndex == sceneIndex).ToList();
     }
 
+    /// <summary>
+    /// Saves the game into the computer's %AppData% folder.
+    /// </summary>
     public static void Save()
     {
-        //GlobalVariables globalVariables = (GlobalVariables)GameObject.Find("Global").GetComponent("GlobalVariables");
-
         Pokemon[][] Party = SaveData.currentSave.PC.boxes;
         Bag PlayerBag = SaveData.currentSave.Bag;
 
@@ -86,6 +87,10 @@ public static class GlobalSaveManager {
         }
     }
 
+    /// <summary>
+    /// Loads the Save file that corresponeds with the saveInex.
+    /// </summary>
+    /// <param name="saveIndex">The index of the save (starting from 0, FE: "Save0.pku")</param>
     public static void Load(int saveIndex)
     {
         BinaryFormatter bf = new BinaryFormatter();
@@ -131,12 +136,17 @@ public static class GlobalSaveManager {
 
             file.Dispose();
         }
-        catch(FileNotFoundException e)
+        catch(FileNotFoundException)
         {
             Debug.Log("Couldn't find \"Save" + saveIndex + ".pku\".");
         }
     }
 
+    /// <summary>
+    /// Gets the amount of save files that's specified in Amount.
+    /// </summary>
+    /// <param name="Amount">The amount of save files that needs to be loaded (0 for all the save files).</param>
+    /// <returns>A List containing the relevant amount of save files.</returns>
     static List<CustomSaveData> GetSaves(int Amount)
     {
         List<CustomSaveData> saveFiles = new List<CustomSaveData>();
