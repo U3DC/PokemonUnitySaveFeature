@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System.Linq;
+using UnityEngine.SceneManagement;
 
 public static class GlobalSaveManager {
 
@@ -44,14 +45,17 @@ public static class GlobalSaveManager {
 
     public static void Save()
     {
-        CustomSaveData DataToSave = new CustomSaveData() { SaveData = EventSaves, PlayerPosition = Player.transform.position, PlayerRotation = Player.transform.rotation};
         GlobalVariables globalVariables = (GlobalVariables)GameObject.Find("Global").GetComponent("GlobalVariables");
 
-        DataToSave.Party = SaveData.currentSave.PC.boxes;
-        DataToSave.PlayerBag = SaveData.currentSave.Bag;
+        Pokemon[][] Party = SaveData.currentSave.PC.boxes;
+        Bag PlayerBag = SaveData.currentSave.Bag;
 
+        CustomSaveData DataToSave = new CustomSaveData(Player.transform.position, Player.transform.rotation, SceneManager.GetActiveScene().buildIndex, Party, PlayerBag, EventSaves);
+
+        string AppData = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData);
         BinaryFormatter bf = new BinaryFormatter();
-        FileStream file = File.Open(@"C:\Users\David Blerkselmans\Desktop\PKU TestSaves\Save1.pku", FileMode.OpenOrCreate, FileAccess.Write);
+        FileStream file = File.Open(AppData + @"\Pokemon Unity\Saves\Save" + (Directory.GetFiles(AppData).Length - 1).ToString() + ".pku", FileMode.OpenOrCreate, FileAccess.Write);
+
         bf.Serialize(file, DataToSave);
         file.Close();
     }
@@ -84,10 +88,28 @@ public static class GlobalSaveManager {
         public SerializableVector3 PlayerPosition;
         public SerializableQuaternion PlayerRotation;
 
+        public int ActiveScene;
+
         public Pokemon[][] Party;
         public Bag PlayerBag;
 
         public List<CustomSaveEvent> SaveData;
+
+        public CustomSaveData(
+            SerializableVector3 playerPosition,
+            SerializableQuaternion playerRotation, int activeScene,
+            Pokemon[][] party, Bag playerBag, List<CustomSaveEvent> saveData)
+        {
+            PlayerPosition = playerPosition;
+            PlayerRotation = playerRotation;
+
+            ActiveScene = activeScene;
+
+            Party = party;
+            PlayerBag = playerBag;
+
+            SaveData = saveData;
+        }
     }
 }
 

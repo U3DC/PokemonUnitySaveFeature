@@ -12,9 +12,11 @@ public class EventListener : MonoBehaviour
     private void Awake()
     {
         GlobalSaveManager.Load();
+
         if(null == Player)
             Player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerMovement>();
         GlobalSaveManager.RegisterPlayer(GameObject.FindGameObjectWithTag("Player"));
+
         List<CustomSaveEvent> Events = GlobalSaveManager.GetRelaventSaveData(SceneManager.GetActiveScene().buildIndex);
 
         foreach(CustomSaveEvent Event in Events)
