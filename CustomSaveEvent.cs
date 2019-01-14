@@ -1,5 +1,4 @@
-﻿using UnityEngine;
-using System;
+﻿using System;
 
 [System.Serializable]
 public class CustomSaveEvent
@@ -10,9 +9,9 @@ public class CustomSaveEvent
     public string ObjectName;
     public SerializableVector3 ObjectPosition;
 
-    public CustomSaveEvent(DateTime eventTime, SaveEventType eventType, GameObject eventObject, int sceneIndex)
+    public CustomSaveEvent(SaveEventType eventType, UnityEngine.GameObject eventObject, int sceneIndex)
     {
-        EventTime = eventTime;
+        EventTime = DateTime.Now;
         EventType = eventType;
         SceneIndex = sceneIndex;
 

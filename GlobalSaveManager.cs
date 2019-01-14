@@ -8,21 +8,24 @@ using System.IO;
 using System.Linq;
 using System;
 using UnityEngine.SceneManagement;
-using UnityEngine;
 
-public static class GlobalSaveManager {
+public static class GlobalSaveManager
+{
     private const string BuildVersion = "0.0.1";
+    //If UseAppdata = true, Pokemon Unity will save the save files into %AppData%/Roaming/Pokemon Unity/Saves
+    //If UseAppdata = false, Pokemon Unity will save the save files into Assets/Saves
+    private const bool UseAppdate = false;
     private static string saveLocation = Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData) + @"\Pokemon Unity\Saves\";
 
-    private static GameObject Player;
+    private static UnityEngine.GameObject Player;
     private static List<CustomSaveEvent> EventSaves = new List<CustomSaveEvent>();
 
     private static EventListener EventListener = new EventListener();
 
-    public static void RegisterPlayer(GameObject player)
+    public static void RegisterPlayer(UnityEngine.GameObject player)
     {
         Player = player;
-        Debug.Log("Registered Player.");
+        UnityEngine.Debug.Log("Registered Player.");
     }
 
     /// <summary>
@@ -33,7 +36,7 @@ public static class GlobalSaveManager {
     {
         EventSaves.Add(customEvent);
         EventSaves = EventSaves.OrderBy(x => x.EventTime).ToList();
-        Debug.Log(customEvent.ToString());
+        UnityEngine.Debug.Log(customEvent.ToString());
     }
 
     /// <summary>
@@ -51,6 +54,11 @@ public static class GlobalSaveManager {
     /// </summary>
     public static void Save()
     {
+        if (!UseAppdate)
+        {
+            saveLocation = UnityEngine.Application.dataPath + "/Saves/";
+        }
+
         Pokemon[][] Party = SaveData.currentSave.PC.boxes;
         Bag PlayerBag = SaveData.currentSave.Bag;
 
@@ -71,19 +79,19 @@ public static class GlobalSaveManager {
             FileStream file = File.Open(saveLocation + @"Save" + saveAmount.ToString() + ".pku", FileMode.OpenOrCreate, FileAccess.Write);
             bf.Serialize(file, DataToSave);
             file.Close();
-            Debug.Log("Save file created.");
+            UnityEngine.Debug.Log("Save file created.");
         }
         catch(Exception)
         {
-            Debug.Log("Pokemon Unity save directory does not exist, creating new one...");
+            UnityEngine.Debug.Log("Pokemon Unity save directory does not exist, creating new one...");
             Directory.CreateDirectory(saveLocation.Substring(0, saveLocation.Length -1));
-            Debug.Log("Trying to save again...");
+            UnityEngine.Debug.Log("Trying to save again...");
 
             FileStream file = File.Open(saveLocation + @"Save" + (Directory.GetFiles(saveLocation, "*pku", SearchOption.TopDirectoryOnly).Length).ToString() + ".pku", FileMode.OpenOrCreate, FileAccess.Write);
             bf.Serialize(file, DataToSave);
             file.Close();
 
-            Debug.Log("Save file created.");
+            UnityEngine.Debug.Log("Save file created.");
         }
     }
 
@@ -93,6 +101,15 @@ public static class GlobalSaveManager {
     /// <param name="saveIndex">The index of the save (starting from 0, FE: "Save0.pku")</param>
     public static void Load(int saveIndex)
     {
+        if (!UseAppdate)
+        {
+            saveLocation = UnityEngine.Application.dataPath + "/Saves/";
+            if(!Directory.Exists(saveLocation.Substring(0, saveLocation.Length - 1)))
+            {
+                Directory.CreateDirectory(saveLocation.Substring(0, saveLocation.Length - 1));
+            }
+        }
+
         BinaryFormatter bf = new BinaryFormatter();
         try
         {
@@ -122,11 +139,11 @@ public static class GlobalSaveManager {
                     SaveData.currentSave.Bag = DataToLoad.PlayerBag;
 
                     //Loading Player
-                    GameObject Player = GameObject.FindGameObjectWithTag("Player");
+                    UnityEngine.GameObject Player = UnityEngine.GameObject.FindGameObjectWithTag("Player");
                     Player.transform.position = DataToLoad.PlayerPosition;
                     Player.GetComponent<PlayerMovement>().direction = DataToLoad.PlayerDirection;
                     //Loading Follower
-                    GameObject Follower = Player.transform.Find("Follower").gameObject;
+                    UnityEngine.GameObject Follower = Player.transform.Find("Follower").gameObject;
                     Follower.transform.position = DataToLoad.FollowerPosition;
                     Follower.GetComponent<FollowerMovement>().direction = DataToLoad.FollowerDirection;
 
@@ -138,7 +155,7 @@ public static class GlobalSaveManager {
         }
         catch(FileNotFoundException)
         {
-            Debug.Log("Couldn't find \"Save" + saveIndex + ".pku\".");
+            UnityEngine.Debug.Log("Couldn't find \"Save" + saveIndex + ".pku\".");
         }
     }
 
@@ -173,7 +190,7 @@ public static class GlobalSaveManager {
                         }
                         catch (Exception e)
                         {
-                            Debug.Log(e.ToString());
+                            UnityEngine.Debug.Log(e.ToString());
                         }
                     }
                 }
